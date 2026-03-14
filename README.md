@@ -109,6 +109,15 @@ Frontend runs on `http://localhost:3000`
 ### 4. Open the Demo
 Open `demo_v3_fixed.html` in your browser to see the **"Sign in with Vault"** flow from a third-party app perspective.
 
+### 5. Storage & Security
+| Technology | Purpose |
+|-----------|---------|
+| IPFS + Filecoin (Storacha) | Permanent decentralised file storage |
+| AES-256-GCM | Client-side encryption before upload |
+| RSA-2048 (UIDAI) | Aadhaar eKYC signature verification |
+| keccak256 | Email + Aadhaar hashing on-chain |
+| Node.js + Express | Backend API server |
+
 ---
 
 ## 📁 Project Structure
@@ -140,22 +149,44 @@ VAULT/
 ```
 
 ---
-
-## 🔒 Security Architecture
+## 🔒 Storage Architecture
 
 ```
-User Device                    Blockchain              IPFS
-─────────────────────          ──────────────          ──────────────
-Aadhaar eKYC ZIP               DID Registry            Encrypted Docs
-    ↓ (local only)                  ↓                       ↓
-RSA-2048 verify                Soulbound Token         AES-256-GCM
-    ↓                               ↓                   (your key only)
+User Device
+────────────────────────────────────────────────────
+Document selected
+    ↓
+AES-256-GCM Encrypt (key from user password, PBKDF2)
+    ↓
+Upload encrypted blob → IPFS + Filecoin via Storacha
+    ↓
+CID returned (permanent, content-addressed)
+    ↓
+keccak256(CID) → stored on Ethereum smart contract
+    ↓
+User owns document forever — on Filecoin + Ethereum
+
+Nobody can delete it. Not even Vault.
+```
+
+---
+
+## 🔒 Identity & ZKP Architecture
+
+```
+User Device                    Ethereum Sepolia         Filecoin
+─────────────────────          ─────────────────        ──────────────
+Aadhaar eKYC ZIP               DID Registry             Encrypted Docs
+    ↓ (local only)             isHuman ✓                AES-256-GCM
+RSA-2048 verify                isAdult ✓                (your key only)
+    ↓                          isIndian ✓
 ZK Proof generated             Nullifier Hash
-    ↓ (proof only sent)
+    ↓                          keccak256(email)
+    ↓ (proof only sent)        keccak256(aadhaar)
 Third-party app ← Verified ✓
-```
 
-**Key principle:- Raw personal data never leaves your device. Ever.
+```
+**Key principle:** Raw personal data never leaves your device. Ever.
 
 ---
 
