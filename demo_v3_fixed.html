@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SBI OnlineBank — Secure Login</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #F5F5F0;
+    color: #1a1a1a;
+    min-height: 100vh;
+  }
+
+  /* ── BANK HEADER ── */
+  .bank-header {
+    background: #1B3A6B;
+    padding: 0 40px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .bank-logo {
+    display: flex; align-items: center; gap: 12px;
+    color: #fff; font-size: 18px; font-weight: 600; letter-spacing: -0.3px;
+  }
+  .bank-logo-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: #fff; display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 800; color: #1B3A6B;
+  }
+  .bank-nav { display: flex; gap: 24px; }
+  .bank-nav a { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 13px; }
+  .bank-nav a:hover { color: #fff; }
+
+  /* ── MAIN LAYOUT ── */
+  .page-body {
+    display: flex; align-items: center; justify-content: center;
+    min-height: calc(100vh - 64px);
+    padding: 40px 20px;
+    gap: 60px;
+  }
+
+  /* ── LEFT: bank info ── */
+  .bank-info { max-width: 360px; }
+  .bank-info h1 { font-size: 32px; font-weight: 700; margin-bottom: 12px; color: #1B3A6B; line-height: 1.2; }
+  .bank-info p { font-size: 14px; color: #666; line-height: 1.7; margin-bottom: 24px; }
+  .features { display: flex; flex-direction: column; gap: 10px; }
+  .feature { display: flex; align-items: center; gap: 10px; font-size: 13px; color: #444; }
+  .feature-icon { width: 28px; height: 28px; border-radius: 6px; background: #E8EDF5; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+
+  /* ── RIGHT: login card ── */
+  .login-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 36px 32px;
+    width: 380px;
+    box-shadow: 0 4px 40px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);
+  }
+  .login-card h2 { font-size: 20px; font-weight: 600; margin-bottom: 4px; color: #1a1a1a; }
+  .login-card .subtitle { font-size: 13px; color: #888; margin-bottom: 28px; }
+
+  /* normal login fields */
+  .field-group { margin-bottom: 16px; }
+  .field-group label { display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; color: #666; text-transform: uppercase; margin-bottom: 6px; }
+  .field-group input {
+    width: 100%; padding: 11px 14px;
+    border: 1px solid #E0E0E0; border-radius: 8px;
+    font-size: 14px; font-family: 'DM Sans', sans-serif;
+    outline: none; transition: border-color 0.2s;
+    color: #1a1a1a;
+  }
+  .field-group input:focus { border-color: #1B3A6B; }
+
+  .btn-bank {
+    width: 100%; padding: 13px;
+    background: #1B3A6B; color: #fff;
+    border: none; border-radius: 8px;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: opacity 0.2s;
+    font-family: 'DM Sans', sans-serif;
+    margin-bottom: 20px;
+  }
+  .btn-bank:hover { opacity: 0.9; }
+
+  /* divider */
+  .divider {
+    display: flex; align-items: center; gap: 12px;
+    font-size: 12px; color: #aaa; margin-bottom: 20px;
+  }
+  .divider::before, .divider::after {
+    content: ''; flex: 1; height: 1px; background: #E8E8E8;
+  }
+
+  /* VAULT BUTTON */
+  .btn-vault {
+    width: 100%; padding: 13px;
+    background: #09090B; color: #F4F4F5;
+    border: none; border-radius: 8px;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer; font-family: 'DM Sans', sans-serif;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    transition: all 0.2s; position: relative; overflow: hidden;
+  }
+  .btn-vault:hover { background: #18181B; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
+  .btn-vault:active { transform: translateY(0); }
+  .vault-v-icon {
+    width: 22px; height: 22px; border-radius: 5px;
+    background: #6366F1; display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: #fff; letter-spacing: -1px;
+    flex-shrink: 0;
+  }
+  .vault-badge {
+    position: absolute; top: -1px; right: 10px;
+    background: #6366F1; color: #fff;
+    font-size: 8px; font-weight: 700; letter-spacing: 0.5px;
+    padding: 2px 5px; border-radius: 0 0 4px 4px;
+  }
+  .privacy-note { font-size: 11px; color: #aaa; text-align: center; margin-top: 10px; line-height: 1.5; }
+
+  /* ══════════════════
+     VAULT POPUP OVERLAY
+  ══════════════════ */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(8px);
+    display: none; align-items: center; justify-content: center;
+    z-index: 100; animation: fadeIn 0.25s ease;
+  }
+  .overlay.open { display: flex; }
+
+  .vault-popup {
+    background: #0F0F12;
+    border: 1px solid rgba(245,244,240,0.1);
+    border-radius: 20px;
+    width: 380px;
+    padding: 34px 30px 26px;
+    position: relative;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.7);
+    animation: slideUp 0.3s cubic-bezier(0.16,1,0.3,1);
+  }
+
+  .vp-close {
+    position: absolute; top: 14px; right: 16px;
+    background: none; border: none; color: rgba(245,244,240,0.3);
+    font-size: 20px; cursor: pointer; line-height: 1;
+  }
+  .vp-close:hover { color: #F4F4F5; }
+
+  /* Vault branding in popup */
+  .vp-brand {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 18px;
+  }
+  .vp-brand-icon {
+    width: 38px; height: 38px; border-radius: 10px;
+    background: rgba(99,102,241,0.2); border: 1px solid rgba(99,102,241,0.4);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; color: rgba(245,244,240,0.9);
+    font-weight: 700; font-family: 'DM Sans', sans-serif;
+  }
+  .vp-brand-text { }
+  .vp-brand-name { font-size: 15px; font-weight: 600; color: #F4F4F5; }
+  .vp-brand-sub { font-size: 11px; color: rgba(245,244,240,0.4); }
+
+  /* requesting from label */
+  .vp-requesting {
+    background: rgba(245,244,240,0.04);
+    border: 1px solid rgba(245,244,240,0.08);
+    border-radius: 10px; padding: 10px 12px;
+    margin-bottom: 20px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .vp-req-bank-icon {
+    width: 28px; height: 28px; border-radius: 6px;
+    background: #1B3A6B; display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 800; color: #fff; flex-shrink: 0;
+  }
+  .vp-req-text { font-size: 11.5px; color: rgba(245,244,240,0.55); line-height: 1.4; }
+  .vp-req-text strong { color: rgba(245,244,240,0.85); display: block; }
+
+  /* what they're asking for */
+  .vp-asking {
+    margin-bottom: 18px;
+  }
+  .vp-asking-label { font-size: 10px; font-weight: 600; letter-spacing: 1px; color: rgba(245,244,240,0.3); text-transform: uppercase; margin-bottom: 8px; }
+  .vp-ask-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px; border-radius: 8px;
+    background: rgba(245,244,240,0.03);
+    border: 1px solid rgba(245,244,240,0.06);
+    margin-bottom: 6px; font-size: 12px; color: rgba(245,244,240,0.7);
+  }
+  .vp-ask-check { color: #22C55E; font-size: 13px; }
+  .vp-ask-cross { color: rgba(245,244,240,0.2); font-size: 13px; }
+
+  /* input */
+  .vp-input-group { margin-bottom: 10px; }
+  .vp-input-label { font-size: 10px; font-weight: 600; letter-spacing: 0.8px; color: rgba(245,244,240,0.4); text-transform: uppercase; margin-bottom: 6px; }
+  .vp-input {
+    width: 100%; background: rgba(245,244,240,0.05);
+    border: 1px solid rgba(245,244,240,0.12); border-radius: 10px;
+    color: #F4F4F5; font-family: 'DM Mono', monospace; font-size: 13px;
+    padding: 11px 13px; outline: none; transition: border-color 0.2s;
+  }
+  .vp-input::placeholder { color: rgba(245,244,240,0.2); font-family: 'DM Sans',sans-serif; font-size: 12px; }
+  .vp-input:focus { border-color: rgba(245,244,240,0.3); background: rgba(245,244,240,0.08); }
+
+  .vp-btn {
+    width: 100%; padding: 13px;
+    background: #F4F4F5; color: #09090B;
+    border: none; border-radius: 10px;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: opacity 0.2s, transform 0.1s;
+    font-family: 'DM Sans', sans-serif; margin-top: 6px;
+  }
+  .vp-btn:hover { opacity: 0.9; }
+  .vp-btn:active { transform: scale(0.99); }
+  .vp-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .vp-privacy {
+    font-size: 10.5px; color: rgba(245,244,240,0.25);
+    text-align: center; margin-top: 12px; line-height: 1.5;
+  }
+
+  /* ── RESULT STATES ── */
+  /* Verifying spinner */
+  .vp-verifying {
+    text-align: center; padding: 20px 0;
+    display: none;
+  }
+  .spinner {
+    width: 44px; height: 44px; border-radius: 50%;
+    border: 3px solid rgba(99,102,241,0.2);
+    border-top-color: #6366F1;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+  .vp-verifying p { font-size: 13px; color: rgba(245,244,240,0.5); }
+
+  /* Success state */
+  .vp-success {
+    text-align: center; padding: 10px 0 6px;
+    display: none;
+  }
+  .success-ring {
+    width: 68px; height: 68px; border-radius: 50%;
+    background: rgba(34,197,94,0.12);
+    border: 2px solid #22C55E;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px;
+    font-size: 28px;
+    animation: popIn 0.4s cubic-bezier(0.16,1,0.3,1);
+  }
+  .vp-success h3 { font-size: 18px; font-weight: 600; color: #4ade80; margin-bottom: 6px; }
+  .vp-success .success-sub { font-size: 12px; color: rgba(245,244,240,0.45); margin-bottom: 20px; line-height: 1.5; }
+  .vp-success-details {
+    background: rgba(34,197,94,0.06); border: 1px solid rgba(34,197,94,0.2);
+    border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; text-align: left;
+  }
+  .vp-success-detail { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 5px; }
+  .vp-success-detail:last-child { margin-bottom: 0; }
+  .vp-success-detail span:first-child { color: rgba(245,244,240,0.4); }
+  .vp-success-detail span:last-child { color: rgba(245,244,240,0.8); font-family: 'DM Mono', monospace; font-size: 10px; }
+  .vp-continue-btn {
+    width: 100%; padding: 13px;
+    background: #22C55E; color: #000;
+    border: none; border-radius: 10px;
+    font-size: 14px; font-weight: 700;
+    cursor: pointer; font-family: 'DM Sans',sans-serif;
+    transition: opacity 0.2s;
+  }
+  .vp-continue-btn:hover { opacity: 0.9; }
+
+  /* Verified banner on main page */
+  .verified-banner {
+    background: #0D2D1A; border: 1px solid #22C55E;
+    border-radius: 12px; padding: 16px 20px;
+    display: none; align-items: center; gap: 12px;
+    margin-top: 16px;
+  }
+  .verified-banner.show { display: flex; }
+  .verified-icon { font-size: 24px; }
+  .verified-text { font-size: 13px; color: #4ade80; line-height: 1.5; }
+  .verified-text strong { display: block; font-size: 15px; margin-bottom: 2px; }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes popIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+</style>
+</head>
+<body>
+
+<!-- ── BANK HEADER ── -->
+<header class="bank-header">
+  <div class="bank-logo">
+    <div class="bank-logo-icon">SB</div>
+    SBI OnlineBank
+  </div>
+  <nav class="bank-nav">
+    <a href="#">Accounts</a>
+    <a href="#">Transfer</a>
+    <a href="#">Loans</a>
+    <a href="#">Support</a>
+  </nav>
+</header>
+
+<!-- ── PAGE BODY ── -->
+<div class="page-body">
+
+  <!-- Left: bank info -->
+  <div class="bank-info">
+    <h1>Secure Banking<br/>Starts With<br/>Verified Identity</h1>
+    <p>Access your accounts with confidence. SBI OnlineBank supports multiple verification methods including our newest integration — Sign in with Vault.</p>
+    <div class="features">
+      <div class="feature"><div class="feature-icon">🔒</div>256-bit encrypted sessions</div>
+      <div class="feature"><div class="feature-icon">📱</div>Multi-factor authentication</div>
+      <div class="feature"><div class="feature-icon">🔐</div>Zero-knowledge identity via Vault</div>
+      <div class="feature"><div class="feature-icon">⚡</div>Instant verification</div>
+    </div>
+  </div>
+
+  <!-- Right: login card -->
+  <div class="login-card">
+    <h2>Sign in to your account</h2>
+    <p class="subtitle">Choose how you want to verify your identity</p>
+
+    <!-- Normal login (fake) -->
+    <div class="field-group">
+      <label>Customer ID</label>
+      <input type="text" placeholder="Enter your Customer ID"/>
+    </div>
+    <div class="field-group">
+      <label>Password</label>
+      <input type="password" placeholder="••••••••"/>
+    </div>
+    <button class="btn-bank">Sign in with Password</button>
+
+    <div class="divider">or verify privately</div>
+
+    <!-- VAULT BUTTON -->
+    <button class="btn-vault" onclick="openVaultPopup()">
+      <div class="vault-v-icon">V</div>
+      Sign in with Vault
+      <div class="vault-badge">NEW</div>
+    </button>
+    <p class="privacy-note">Vault shares zero personal data with SBI — only a verified proof</p>
+
+    <!-- Verified banner (shown after success) -->
+    <div class="verified-banner" id="verified-banner">
+      <div class="verified-icon">✓</div>
+      <div class="verified-text">
+        <strong>Identity Verified by Vault</strong>
+        SBI received your proof — no personal data was shared. Welcome back.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════
+     VAULT POPUP
+══════════════════════════════════════ -->
+<div class="overlay" id="vault-overlay">
+  <div class="vault-popup">
+    <button class="vp-close" onclick="closeVaultPopup()">×</button>
+
+    <!-- STATE 1: Password only sign-in -->
+    <div id="vp-form">
+      <!-- Vault branding -->
+      <div class="vp-brand">
+        <div class="vp-brand-icon">V</div>
+        <div class="vp-brand-text">
+          <div class="vp-brand-name">Sign in with Vault</div>
+          <div class="vp-brand-sub">Powered by zero-knowledge proof</div>
+        </div>
+      </div>
+
+      <!-- Requesting from -->
+      <div class="vp-requesting">
+        <div class="vp-req-bank-icon">SB</div>
+        <div class="vp-req-text">
+          <strong>SBI OnlineBank is requesting</strong>
+          Age verification · Indian resident status
+        </div>
+      </div>
+
+      <!-- What they get vs what they DON'T get -->
+      <div class="vp-asking">
+        <div class="vp-asking-label">What SBI will receive</div>
+        <div class="vp-ask-item"><span class="vp-ask-check">✓</span> Verified: you are above 18</div>
+        <div class="vp-ask-item"><span class="vp-ask-check">✓</span> Verified: Indian Aadhaar holder</div>
+        <div class="vp-ask-item"><span class="vp-ask-cross">✗</span> <span style="text-decoration:line-through; opacity:0.4;">Your Aadhaar number</span></div>
+        <div class="vp-ask-item"><span class="vp-ask-cross">✗</span> <span style="text-decoration:line-through; opacity:0.4;">Your name, address, DOB</span></div>
+        <div class="vp-ask-item"><span class="vp-ask-cross">✗</span> <span style="text-decoration:line-through; opacity:0.4;">Any personal information</span></div>
+      </div>
+
+      <!-- Password only -->
+      <div class="vp-input-group" style="margin-bottom:6px;">
+        <div class="vp-input-label">Password</div>
+        <input type="password" class="vp-input" id="vp-password-input" placeholder="Enter your Vault password" style="font-size:14px; letter-spacing:2px;"/>
+      </div>
+      <p style="font-size:10.5px; color:rgba(245,244,240,0.3); margin-bottom:16px; line-height:1.5;">
+        Your password unlocks your private key locally. It is never sent anywhere.
+      </p>
+
+      <button class="vp-btn" onclick="startVerification()">Generate proof &amp; verify →</button>
+
+      <!-- Divider -->
+      <div style="display:flex;align-items:center;gap:10px;margin:14px 0;">
+        <div style="flex:1;height:1px;background:rgba(255,255,255,0.07);"></div>
+        <span style="font-size:11px;color:rgba(245,244,240,0.25);">or</span>
+        <div style="flex:1;height:1px;background:rgba(255,255,255,0.07);"></div>
+      </div>
+
+      <!-- Register link -->
+      <div style="text-align:center;">
+        <span style="font-size:12px;color:rgba(245,244,240,0.4);">Don't have one?</span>
+        <a href="http://localhost:3000/register" target="_blank" style="font-size:12px;color:#818CF8;font-weight:600;text-decoration:none;margin-left:5px;transition:color 0.2s;" onmouseover="this.style.color='#a5b4fc'" onmouseout="this.style.color='#818CF8'">Register with Vault →</a>
+      </div>
+
+      <p class="vp-privacy" style="margin-top:10px;">Vault sends zero personal data to SBI. Only a cryptographic proof.</p>
+    </div>
+
+    <!-- STATE 2: Verifying -->
+    <div class="vp-verifying" id="vp-verifying">
+      <div class="spinner"></div>
+      <p>Generating zero-knowledge proof...</p>
+      <p style="margin-top:6px; font-size:11px; color:rgba(245,244,240,0.25);">Checking blockchain registry</p>
+    </div>
+
+    <!-- STATE 3: Success -->
+    <div class="vp-success" id="vp-success">
+      <div class="success-ring">✓</div>
+      <h3>Identity Verified</h3>
+      <p class="success-sub">Your proof was validated against the Vault blockchain registry.<br/>SBI received zero personal data.</p>
+      <div class="vp-success-details">
+        <div class="vp-success-detail"><span>Status</span><span>VERIFIED ✓</span></div>
+        <div class="vp-success-detail"><span>Proof type</span><span>ZKP hash-comparison</span></div>
+        <div class="vp-success-detail"><span>Data shared</span><span>NONE</span></div>
+        <div class="vp-success-detail"><span>Blockchain</span><span>Ethereum Sepolia</span></div>
+        <div class="vp-success-detail"><span>Proof ID</span><span id="proof-id">vlt-proof-xxxx</span></div>
+      </div>
+      <button class="vp-continue-btn" onclick="continueToBank()">Continue to SBI →</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  function openVaultPopup() {
+    document.getElementById('vault-overlay').classList.add('open');
+    // Reset to form state
+    document.getElementById('vp-form').style.display = 'block';
+    document.getElementById('vp-verifying').style.display = 'none';
+    document.getElementById('vp-success').style.display = 'none';
+    document.getElementById('vp-password-input').value = '';
+    document.getElementById('vp-password-input').style.borderColor = '';
+  }
+
+  function closeVaultPopup() {
+    document.getElementById('vault-overlay').classList.remove('open');
+  }
+
+  // goToPassword no longer needed — single step flow
+
+  function startVerification() {
+    const pwd = document.getElementById('vp-password-input').value;
+    if (!pwd) {
+      document.getElementById('vp-password-input').style.borderColor = '#EF4444';
+      document.getElementById('vp-password-input').focus();
+      return;
+    }
+    document.getElementById('vp-password-input').style.borderColor = '';
+    // Hide form, show verifying
+    document.getElementById('vp-form').style.display = 'none';
+    document.getElementById('vp-verifying').style.display = 'block';
+
+    // Simulate ZKP verification — 2.5 seconds
+    setTimeout(() => {
+      document.getElementById('vp-verifying').style.display = 'none';
+      document.getElementById('vp-success').style.display = 'block';
+      const proofId = 'vlt-' + Math.random().toString(36).substring(2,8).toUpperCase();
+      document.getElementById('proof-id').textContent = proofId;
+    }, 2500);
+  }
+
+  function continueToBank() {
+    closeVaultPopup();
+    document.getElementById('verified-banner').classList.add('show');
+    // Scroll to banner
+    document.getElementById('verified-banner').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  // Close on backdrop click
+  document.getElementById('vault-overlay').addEventListener('click', function(e) {
+    if (e.target === this) closeVaultPopup();
+  });
+
+  // Enter key triggers verification directly
+  document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Enter') return;
+    if (!document.getElementById('vault-overlay').classList.contains('open')) return;
+    if (document.getElementById('vp-form').style.display !== 'none') {
+      startVerification();
+    }
+  });
+</script>
+</body>
+</html>
