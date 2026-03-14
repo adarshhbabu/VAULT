@@ -98,6 +98,53 @@ function StepIndicator({ current }: { current: Step }) {
   );
 }
 
+/* ── Guardian name input — no starting with number ── */
+function GuardianInput({ label, onAdd }: { label: string; onAdd: (name: string) => void }) {
+  const [val, setVal] = useState("");
+  const [err, setErr] = useState("");
+
+  function handleChange(v: string) {
+    if (v.length > 0 && /^[0-9]/.test(v)) {
+      setErr("Guardian name cannot start with a number");
+    } else {
+      setErr("");
+    }
+    setVal(v);
+  }
+
+  function handleAdd() {
+    if (!val.trim()) return;
+    if (/^[0-9]/.test(val)) { setErr("Guardian name cannot start with a number"); return; }
+    onAdd(val.trim());
+    setVal("");
+  }
+
+  return (
+    <div className="flex-1 flex flex-col gap-1">
+      <div className="flex gap-2">
+        <input
+          value={val}
+          onChange={e => handleChange(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter") handleAdd(); }}
+          placeholder={`+ Add ${label}`}
+          className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+        />
+        {val.trim() && !err && (
+          <button onClick={handleAdd} className="text-xs text-vault-gold hover:underline font-mono">Add</button>
+        )}
+      </div>
+      {err && <p className="text-[10px] text-vault-red">{err}</p>}
+    </div>
+  );
+}
+
+/* ── Recovery code validator ── */
+function hasRepeatingDigits(code: string): boolean {
+  // Check for any digit that appears more than once
+  const digits = code.replace(/\s/g, "").split("");
+  return new Set(digits).size !== digits.length;
+}
+
 export default function RegisterPage() {
   const [step, setStep] = useState<Step>(1);
   const [name, setName] = useState("");
@@ -178,8 +225,15 @@ export default function RegisterPage() {
               <div className="flex flex-col gap-5">
                 <div>
                   <label className="font-mono text-[11px] text-muted-foreground tracking-widest uppercase block mb-2">Display Name</label>
-                  <input value={name} onChange={e => setName(e.target.value)} placeholder="How you'll appear in Vault"
+                  <input value={name} onChange={e => {
+                    const val = e.target.value;
+                    if (val.length > 0 && /^[0-9]/.test(val)) return; // block starting with number
+                    setName(val);
+                  }} placeholder="How you'll appear in Vault"
                     className="w-full bg-vault-deep border border-white/[0.08] rounded-xl px-4 py-3 font-sans text-[15px] text-foreground placeholder:text-white/20 focus:outline-none focus:ring-1 focus:ring-vault-gold/40 focus:border-vault-gold/40" />
+                  {name.length > 0 && /^[0-9]/.test(name) && (
+                    <p className="text-xs text-vault-red mt-1.5">Name cannot start with a number</p>
+                  )}
                   {name.length >= 2 && (
                     <p className="font-mono text-xs text-vault-gold mt-1.5">vault://{name.toLowerCase().replace(/\s+/g, "-")}</p>
                   )}
@@ -374,17 +428,19 @@ export default function RegisterPage() {
                       <Users className="h-4 w-4" />
                     </div>
                     {guardians[i] ? (
-                      <div className="flex-1">
-                        <p className="font-sans text-sm">{guardians[i]}</p>
-                        <p className="font-mono text-[10px] text-vault-teal">Invite sent → Accepted</p>
+                      <div className="flex-1 flex items-center justify-between">
+                        <div>
+                          <p className="font-sans text-sm">{guardians[i]}</p>
+                          <p className="font-mono text-[10px] text-vault-teal">Invite sent → Accepted</p>
+                        </div>
+                        <button onClick={() => setGuardians(prev => { const n = [...prev]; n[i] = ""; return n.filter(Boolean); })}
+                          className="text-xs text-muted-foreground hover:text-vault-red transition-colors">Remove</button>
                       </div>
                     ) : (
-                      <button onClick={() => {
-                        const name = prompt(`Enter Guardian ${i+1} name`);
-                        if (name) setGuardians(prev => { const n = [...prev]; n[i] = name; return n; });
-                      }} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                        + Add guardian {i + 1}
-                      </button>
+                      <GuardianInput
+                        label={`Guardian ${i + 1}`}
+                        onAdd={(name) => setGuardians(prev => { const n = [...prev]; n[i] = name; return n; })}
+                      />
                     )}
                   </div>
                 ))}

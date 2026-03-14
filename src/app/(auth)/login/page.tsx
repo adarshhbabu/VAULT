@@ -234,11 +234,33 @@ export default function LoginPage() {
           <input 
             type="text" 
             value={recoveryCode} 
-            onChange={e => setRecoveryCode(e.target.value)}
+            onChange={e => {
+              const raw = e.target.value.replace(/\s/g, "");
+              // Only allow digits, max 8
+              if (!/^[0-9]*$/.test(raw) || raw.length > 8) return;
+              // Format as XXXX XXXX
+              const formatted = raw.length > 4 ? raw.slice(0,4) + " " + raw.slice(4) : raw;
+              setRecoveryCode(formatted);
+            }}
             placeholder="XXXX XXXX"
-            className="w-full bg-vault-deep border border-white/10 rounded-xl px-4 py-3 font-mono text-center text-xl tracking-widest text-vault-gold mb-6 outline-none focus:border-vault-gold/50"
+            className="w-full bg-vault-deep border border-white/10 rounded-xl px-4 py-3 font-mono text-center text-xl tracking-widest text-vault-gold mb-2 outline-none focus:border-vault-gold/50"
           />
-          <button onClick={() => setScreen("unlocked")} className="w-full btn-primary py-3">
+          {(() => {
+            const digits = recoveryCode.replace(/\s/g, "");
+            const hasRepeat = digits.length > 1 && new Set(digits.split("")).size !== digits.length;
+            return hasRepeat ? (
+              <p className="text-xs text-vault-red mb-4 text-center">Recovery code cannot contain repeating digits</p>
+            ) : <div className="mb-4" />;
+          })()}
+          <button 
+            onClick={() => {
+              const digits = recoveryCode.replace(/\s/g, "");
+              if (new Set(digits.split("")).size !== digits.length) return;
+              setScreen("unlocked");
+            }} 
+            disabled={recoveryCode.replace(/\s/g,"").length < 8}
+            className="w-full btn-primary py-3 disabled:opacity-40"
+          >
             Restore Identity
           </button>
         </div>

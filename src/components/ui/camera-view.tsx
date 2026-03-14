@@ -34,15 +34,21 @@ export function CameraView({ onCapture, onSkip, skipLabel = "Skip for demo" }: C
     setErrorMsg("");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
+        video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: false,
       });
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
+      // Set phase first so video element is rendered in DOM
       setPhase("streaming");
+      // Use setTimeout to ensure video element is mounted before assigning stream
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.onloadedmetadata = () => {
+            videoRef.current?.play().catch(() => {});
+          };
+        }
+      }, 100);
     } catch (err: any) {
       if (err.name === "NotAllowedError") {
         setErrorMsg("Camera permission denied. Please allow camera access in your browser settings and try again.");
