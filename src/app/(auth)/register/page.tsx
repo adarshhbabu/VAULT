@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Shield, Eye, EyeOff, Check, X, ChevronRight, Upload, FileArchive, Users, ExternalLink } from "lucide-react";
+import { Eye, EyeOff, Check, X, ChevronRight, FileArchive, Users, ExternalLink } from "lucide-react";
+import { CameraView } from "@/components/ui/camera-view";
 import { cn } from "@/lib/utils";
 
 type Step = 1 | 2 | 3 | 4 | 5 | 6;
@@ -309,37 +310,12 @@ export default function RegisterPage() {
           {step === 3 && (
             <div className="bg-vault-surface/80 backdrop-blur-sm border border-white/[0.07] rounded-2xl p-7">
               <h3 className="font-serif text-3xl font-bold mb-1">Video Confirmation</h3>
-              <p className="text-muted-foreground text-sm font-sans mb-6">Position your face in the frame. We use local AI to verify you are a real person.</p>
-              
-              <div className="relative aspect-video bg-black rounded-2xl overflow-hidden mb-6 border border-white/10 group">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-48 h-48 rounded-full border-2 border-dashed border-vault-gold/40 animate-spin" />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-44 h-44 rounded-full border-2 border-vault-gold/60" />
-                  </div>
-                </div>
-                {/* Simulated scan line */}
-                <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-vault-teal/50 to-transparent shadow-[0_0_15px_rgba(45,212,191,0.5)] animate-scan" />
-                <div className="absolute bottom-4 left-4 flex items-center gap-2 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10">
-                  <div className="w-2 h-2 rounded-full bg-vault-red animate-pulse" />
-                  <span className="font-mono text-[10px] text-white">REC · LIVENESS_DETECT_V2</span>
-                </div>
-              </div>
-              <style>{`
-                @keyframes scan {
-                  0% { top: 0%; }
-                  50% { top: 100%; }
-                  100% { top: 0%; }
-                }
-                .animate-scan {
-                  position: absolute;
-                  animation: scan 3s ease-in-out infinite;
-                }
-              `}</style>
-
-              <button onClick={() => setStep(4)} className="w-full bg-gradient-to-r from-vault-gold to-vault-goldLight text-[#0a0b08] font-semibold py-3 rounded-xl hover:opacity-90 transition-all">
-                Confirm Identity <Check className="inline h-4 w-4" />
-              </button>
+              <p className="text-muted-foreground text-sm font-sans mb-6">Position your face in the frame. We verify you are a real person — processed locally only.</p>
+              <CameraView
+                onCapture={() => setStep(4)}
+                onSkip={() => setStep(4)}
+                skipLabel="Skip liveness check (demo mode)"
+              />
               <p className="text-[10px] text-muted-foreground font-mono mt-4 text-center">Video data is processed locally and never leaves this device.</p>
             </div>
           )}
