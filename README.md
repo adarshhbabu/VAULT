@@ -61,7 +61,7 @@ This is the major Application of "Vault" Every incoming SMS is checked against a
 ### Blockchain
 | Technology | Purpose |
 |-----------|---------|
-| Ethereum | Identity layer |
+| Ethereum/Polygon zkEVM | Identity layer |
 | Solidity | Smart contracts (DID + SBT) |
 | ethers.js + wagmi + viem | Wallet connection |
 | Hardhat  | Contract deployment |
