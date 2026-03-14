@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { MoreHorizontal, Plus, Share2, Download, Shield, CheckCircle, Lock, Database } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -24,7 +24,7 @@ const tagColorMap: Record<string, string> = {
   "On-chain": "bg-vault-teal/10 text-vault-teal border-vault-teal/20",
 };
 
-function VaultScoreRing({ score }: { score: number }) {
+function VaultScoreRing({ score, guardians }: { score: number; guardians: string[] }) {
   const radius = 44;
   const circumference = 2 * Math.PI * radius;
   const progress = (score / 100) * circumference;
@@ -51,7 +51,7 @@ function VaultScoreRing({ score }: { score: number }) {
             { label: "3 data breaches detected", bad: true },
             { label: "847 scam reports in your area", bad: true },
             { label: "Documents on-chain: 5/7", bad: false },
-            { label: "No guardians configured", bad: true },
+            { label: `Guardians: ${guardians.length}/3`, bad: guardians.length === 0 },
           ].map(item => (
             <div key={item.label} className="flex items-center gap-2">
               {item.bad ? <span className="w-1.5 h-1.5 rounded-full bg-vault-red shrink-0" /> : <CheckCircle className="h-3 w-3 text-vault-teal shrink-0" />}
@@ -81,6 +81,15 @@ function StatCard({ icon, label, value, sub, color = "text-foreground" }: {
 
 export default function DashboardPage() {
   const [filter, setFilter] = useState("All");
+  const [guardians, setGuardians] = useState<string[]>([]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("adarsh_guardians");
+    if (saved) {
+      setGuardians(JSON.parse(saved));
+    }
+  }, []);
+
   const filtered = filter === "All" ? DOCUMENTS : DOCUMENTS.filter(d => d.category === filter);
 
   const counts: Record<string, number> = { All: DOCUMENTS.length };
@@ -92,7 +101,7 @@ export default function DashboardPage() {
       <div className="flex items-start justify-between mb-8">
         <div>
           <p className="font-mono text-[11px] text-muted-foreground tracking-[3px] uppercase mb-1">Welcome back</p>
-          <h1 className="font-sans text-3xl font-bold">Hello, <span className="font-serif italic text-vault-gold">Rahul</span></h1>
+          <h1 className="font-sans text-3xl font-bold">Hello, <span className="font-serif italic text-vault-gold">Adarsh Babu</span></h1>
           <p className="text-muted-foreground text-sm font-sans mt-1">Encrypted on IPFS · Anchored on Ethereum · Readable only by you</p>
         </div>
         <Link href="/documents" className="flex items-center gap-2 bg-gradient-to-r from-vault-gold to-vault-goldLight text-[#0a0b08] font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 active:scale-[0.98] transition-all shadow-lg shadow-vault-gold/20">
@@ -101,7 +110,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Vault Score */}
-      <VaultScoreRing score={73} />
+      <VaultScoreRing score={73} guardians={guardians} />
 
       {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">

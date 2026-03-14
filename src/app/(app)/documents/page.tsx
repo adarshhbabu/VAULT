@@ -93,7 +93,7 @@ export default function DocumentsPage() {
             <div className="flex items-center justify-between mt-auto pt-2 border-t border-white/[0.05]">
               <div className="flex items-center gap-1">
                 {doc.onChain
-                  ? <span className="flex items-center gap-1 font-mono text-[10px] text-vault-teal"><Database className="h-2.5 w-2.5" /> On Polygon ✓</span>
+                  ? <span className="flex items-center gap-1 font-mono text-[10px] text-vault-teal"><Database className="h-2.5 w-2.5" /> On Ethereum Sepolia ✓</span>
                   : <Lock className="h-3 w-3 text-muted-foreground" />}
               </div>
               <div className="flex gap-2">

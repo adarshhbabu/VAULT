@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ShieldCheck, AlertTriangle, Lock, Users, Mail, Smartphone, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +22,24 @@ const NULLIFIERS = [
 
 export default function SecurityPage() {
   const [tab, setTab] = useState<Tab>("recovery");
+  const [guardians, setGuardians] = useState<string[]>([]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("adarsh_guardians");
+    if (saved) {
+      setGuardians(JSON.parse(saved));
+    }
+  }, []);
+
+  const addGuardian = () => {
+    if (guardians.length < 3) {
+      const guardianNames = ["Priya S.", "Amit K.", "Neha R."];
+      const newGuardian = guardianNames[guardians.length];
+      const updated = [...guardians, newGuardian];
+      setGuardians(updated);
+      localStorage.setItem("adarsh_guardians", JSON.stringify(updated));
+    }
+  };
 
   const tabs: { key: Tab; label: string; icon: React.ElementType }[] = [
     { key: "recovery", label: "Account Recovery", icon: Lock },
@@ -60,10 +78,10 @@ export default function SecurityPage() {
             <h2 className="font-sans font-semibold text-lg mb-5">Recovery Methods</h2>
             <div className="flex flex-col gap-4">
               {[
-                { icon: Users, label: "Guardians", status: "0 / 3 set", ok: false, action: "Add guardians →" },
+                { icon: Users, label: "Guardians", status: guardians.length + " / 3 set", ok: guardians.length > 0, action: "View" },
                 { icon: Mail, label: "Email Recovery", status: "Not configured", ok: false, action: "Configure →" },
                 { icon: Lock, label: "Recovery Code", status: "Set", ok: true, action: "Change →" },
-                { icon: Smartphone, label: "Trusted Device", status: "Rahul's iPhone", ok: true, action: "Manage →" },
+                { icon: Smartphone, label: "Trusted Device", status: "Adarsh's A35", ok: true, action: "Manage →" },
               ].map((m) => (
                 <div key={m.label} className="flex items-center justify-between py-3 border-b border-white/[0.05] last:border-0">
                   <div className="flex items-center gap-3">

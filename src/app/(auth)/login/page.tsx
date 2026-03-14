@@ -2,8 +2,24 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Shield, Eye, EyeOff, Lock, AlertCircle, ChevronRight, Mail, Smartphone, Users, FileArchive, CheckCircle, Clock } from "lucide-react";
+import { Shield, Eye, EyeOff, Lock, AlertCircle, ChevronRight, Mail, Smartphone, Users, FileArchive, CheckCircle, Clock, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+declare global {
+  interface Window {
+    JSZip: any;
+  }
+}
+
+// UIDAI Public Key (RSA-2048) - Replace with actual UIDAI public key
+const UIDAI_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2a2rwplBCXmzXB0pkzxm
+n4JWTG9rjxXvKmC4hYjmqJKwsVvMqRaELaZhDM6cQnqGqLkpxGZP4zZLZVDKkwwp
+S0r0YhC5pJ5xKvVqXmVrGJaxqZLYBKN3N5mXqFqG9fCmVn5YX5vZnWjG8qJ2HqSg
+lqvLyZRLLqwZmHDXvkBJFMlXvWqfN6K4wK5p8fQKzLXqM5fVbxWXJXLqXbYJVnLY
+FlDQnZ6p7vPWQmL3MvXqQqQqG8M8LX5ZpN5R8vZL2wQQZ6LqMPZbLqVZLqMzLpXz
+Q5MzJ8nWpLnJLqQ8J5Q6Q8Q5Q7Q5Q7Q5Q7Q5Q7Q5Q7Q7Q8Q8Q8Q8Q8QIDAQAB
+-----END PUBLIC KEY-----`;
 
 type Screen = "login" | "recovery-choice" | "path-a-ekyc" | "path-a-guardian" | "path-a-email" | "path-a-code" | "path-b-step1" | "path-b-wait1" | "path-b-step2" | "path-b-wait2" | "path-b-step3" | "unlocked";
 
@@ -14,7 +30,47 @@ export default function LoginPage() {
   const [attempts, setAttempts] = useState(0);
   const [shake, setShake] = useState(false);
   const [guardianApproved, setGuardianApproved] = useState(false);
+  const [guardiansApproved, setGuardiansApproved] = useState(0); // Track number of approved guardians (0-3)
+  const [storedGuardians, setStoredGuardians] = useState<string[]>([]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("adarsh_guardians");
+    if (saved) {
+      setStoredGuardians(JSON.parse(saved));
+    }
+  }, []);
   const [recoveryCode, setRecoveryCode] = useState("");
+
+  // Path A: XML submission states
+  const [pathAFile, setPathAFile] = useState<File | null>(null);
+  const [pathAShareCode, setPathAShareCode] = useState("");
+  const [pathAFileAgeError, setPathAFileAgeError] = useState("");
+  const [pathAShareCodeError, setPathAShareCodeError] = useState("");
+  const [pathAVerified, setPathAVerified] = useState(false);
+  const [pathAError, setPathAError] = useState("");
+  const [pathAData, setPathAData] = useState<any>(null);
+  const [pathAVerifying, setPathAVerifying] = useState(false);
+
+  // Path B: Multi-step XML submission states
+  const [pathBStep1File, setPathBStep1File] = useState<File | null>(null);
+  const [pathBStep2File, setPathBStep2File] = useState<File | null>(null);
+  const [pathBStep3File, setPathBStep3File] = useState<File | null>(null);
+  const [pathBStep1AgeError, setPathBStep1AgeError] = useState("");
+  const [pathBStep2AgeError, setPathBStep2AgeError] = useState("");
+  const [pathBStep3AgeError, setPathBStep3AgeError] = useState("");
+
+  const TWO_DAYS_MS = 2 * 24 * 60 * 60 * 1000;
+
+  // Load JSZip on mount
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
+    script.async = true;
+    document.head.appendChild(script);
+    return () => {
+      document.head.removeChild(script);
+    };
+  }, []);
 
   const handleLogin = () => {
     if (password === "vault123") {
@@ -24,6 +80,145 @@ export default function LoginPage() {
       setAttempts(newAttempts);
       setShake(true);
       setTimeout(() => setShake(false), 500);
+    }
+  };
+
+  // Path A XML handlers
+  const handlePathAUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.endsWith(".zip")) {
+      setPathAFileAgeError("Only .zip files are allowed");
+      setPathAFile(null);
+      return;
+    }
+
+    const fileAge = Date.now() - file.lastModified;
+    if (fileAge > TWO_DAYS_MS) {
+      const daysOld = Math.ceil(fileAge / (24 * 60 * 60 * 1000));
+      setPathAFileAgeError(`This ZIP file is ${daysOld} days old. Download a fresh one from myaadhaar.uidai.gov.in (max 2 days old)`);
+      setPathAFile(null);
+      return;
+    }
+
+    setPathAFileAgeError("");
+    setPathAFile(file);
+    setPathAShareCode("");
+    setPathAShareCodeError("");
+    setPathAVerified(false);
+    setPathAData(null);
+    setPathAError("");
+  };
+
+  const handlePathAShareCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.slice(0, 4);
+    if (!/^\d*$/.test(value)) {
+      setPathAShareCodeError("Only numbers allowed");
+      return;
+    }
+    setPathAShareCodeError("");
+    setPathAShareCode(value);
+  };
+
+  const handlePathAVerifyPressed = async () => {
+    if (!pathAFile || pathAShareCode.length !== 4) {
+      setPathAShareCodeError("Enter a valid 4-digit code");
+      return;
+    }
+
+    setPathAVerifying(true);
+    setPathAError("");
+    setPathAShareCodeError("");
+
+    // Simulate verification delay (pretend to do all the checks)
+    await new Promise(r => setTimeout(r, 2000));
+
+    // Generate random reference ID (24-char hex hash for UI fit)
+    const referenceId = Array.from(crypto.getRandomValues(new Uint8Array(12)))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('')
+      .toUpperCase();
+    
+    // Generate document hash
+    const documentHash = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('')
+      .toUpperCase()
+      .substring(0, 16);
+    
+    // Generate IPFS CID (simulated)
+    const ipfsCid = `Qm${Array.from(crypto.getRandomValues(new Uint8Array(24)))
+      .map(b => ((b % 26) + 10).toString(36))
+      .join('')
+      .toUpperCase()}`;
+    
+    // Generate public key hash
+    const pubKeyHash = Array.from(crypto.getRandomValues(new Uint8Array(20)))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('')
+      .toUpperCase()
+      .substring(0, 16);
+
+    const now = new Date();
+    const dateStr = now.toLocaleDateString();
+    const timeStr = now.toLocaleTimeString();
+
+    // Always show Adarsh Babu's data
+    setPathAData({
+      name: "Adarsh Babu",
+      dob: "29/04/2006",
+      gender: "Male",
+      aadhaar: "XXXX XXXX 5719",
+      address: "C/O Santhosh Babu, Anusree, Kuttemperoor P.O., Mannar, Kuttemperur, Alappuzha, Kerala",
+      timestamp: `${dateStr} ${timeStr}`,
+      signature: "RSA-2048 ✓",
+      referenceId: referenceId,
+      documentHash: documentHash,
+      ipfsCid: ipfsCid,
+      pubKeyHash: pubKeyHash,
+      verificationMethod: "Zero-Knowledge Proof (ZKP)",
+      status: "Verified & Secured on IPFS"
+    });
+
+    setPathAVerified(true);
+    setPathAVerifying(false);
+  };
+
+  // Path B XML handlers - helper function
+  const handlePathBUpload = (stepNum: 1 | 2 | 3, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.endsWith(".zip")) {
+      if (stepNum === 1) setPathBStep1AgeError("Only .zip files are allowed");
+      else if (stepNum === 2) setPathBStep2AgeError("Only .zip files are allowed");
+      else setPathBStep3AgeError("Only .zip files are allowed");
+      return;
+    }
+
+    const fileAge = Date.now() - file.lastModified;
+    if (fileAge > TWO_DAYS_MS) {
+      const daysOld = Math.ceil(fileAge / (24 * 60 * 60 * 1000));
+      const errorMsg = `This ZIP file is ${daysOld} days old. Download a fresh one from myaadhaar.uidai.gov.in (max 2 days old)`;
+      if (stepNum === 1) setPathBStep1AgeError(errorMsg);
+      else if (stepNum === 2) setPathBStep2AgeError(errorMsg);
+      else setPathBStep3AgeError(errorMsg);
+      return;
+    }
+
+    if (stepNum === 1) {
+      setPathBStep1AgeError("");
+      setPathBStep1File(file);
+      setScreen("path-b-wait1");
+    } else if (stepNum === 2) {
+      setPathBStep2AgeError("");
+      setPathBStep2File(file);
+      setScreen("path-b-wait2");
+    } else {
+      setPathBStep3AgeError("");
+      setPathBStep3File(file);
+      setScreen("unlocked");
     }
   };
 
@@ -78,7 +273,7 @@ export default function LoginPage() {
           <div className="flex items-center gap-3 bg-vault-teal/[0.06] border border-vault-teal/20 rounded-xl px-3 py-2.5 mb-6">
             <div className="w-2 h-2 rounded-full bg-vault-teal animate-pulse" />
             <div className="flex-1">
-              <span className="text-sm font-sans text-foreground">Rahul&apos;s iPhone</span>
+              <span className="text-sm font-sans text-foreground">Adarsh's A35</span>
               <span className="font-mono text-xs text-muted-foreground ml-2">did:vault:0x8f...ef2</span>
             </div>
             <Lock className="h-3.5 w-3.5 text-muted-foreground" />
@@ -170,11 +365,134 @@ export default function LoginPage() {
             <div className="h-px flex-1 bg-vault-gold/20" />
           </div>
           <h2 className="font-serif text-2xl font-bold mb-4">Submit eKYC ZIP</h2>
-          <label className="flex flex-col items-center justify-center border-2 border-dashed border-white/10 hover:border-vault-gold/50 rounded-2xl p-8 cursor-pointer transition-all bg-vault-deep/40">
-            <FileArchive className="h-10 w-10 text-vault-gold/50 mb-3" />
-            <p className="text-sm text-foreground">Aadhaar eKYC ZIP</p>
-            <input type="file" className="hidden" onChange={() => setScreen("path-a-guardian")} />
-          </label>
+
+          <div className="bg-vault-surface2/50 border border-vault-gold/20 rounded-xl p-4 mb-6">
+            <p className="font-sans font-medium text-sm mb-3">Get your eKYC file first</p>
+            <a href="https://myaadhaar.uidai.gov.in/offline-kyc" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-vault-gold text-sm font-mono hover:underline mb-3">
+              <ExternalLink className="h-3.5 w-3.5" /> myaadhaar.uidai.gov.in
+            </a>
+            <ol className="text-xs text-muted-foreground font-sans space-y-1 list-decimal list-inside">
+              <li>Go to myaadhaar.uidai.gov.in and log in</li>
+              <li>Click &ldquo;Offline e-KYC&rdquo; → &ldquo;Download&rdquo;</li>
+              <li>Set a 4-digit share code (remember it!)</li>
+              <li>Save the downloaded ZIP file (must be less than 2 days old)</li>
+            </ol>
+          </div>
+
+          {!pathAFile ? (
+            <>
+              <label className="flex flex-col items-center justify-center border-2 border-dashed border-white/10 hover:border-vault-gold/50 rounded-2xl p-8 cursor-pointer transition-all bg-vault-deep/40">
+                <FileArchive className="h-10 w-10 text-vault-gold/50 mb-3" />
+                <p className="text-sm text-foreground">Aadhaar eKYC ZIP</p>
+                <p className="text-xs text-muted-foreground">.zip files only · max 2 days old</p>
+                <input type="file" accept=".zip" className="hidden" onChange={handlePathAUpload} />
+              </label>
+              {pathAFileAgeError && (
+                <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-xl p-3 mt-4 text-red-400">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  <span className="text-sm font-sans">{pathAFileAgeError}</span>
+                </div>
+              )}
+            </>
+          ) : !pathAVerified ? (
+            <div>
+              <div className="flex items-center gap-3 bg-vault-teal/[0.06] border border-vault-teal/20 rounded-xl p-3 mb-4">
+                <FileArchive className="h-5 w-5 text-vault-teal" />
+                <span className="text-sm font-mono text-foreground">{pathAFile.name} · {(pathAFile.size / 1024).toFixed(0)} KB · Ready</span>
+              </div>
+              <div className="mb-4">
+                <label className="font-mono text-[11px] text-muted-foreground tracking-widest uppercase block mb-2">4-Digit Share Code</label>
+                <input 
+                  type="text" 
+                  inputMode="numeric" 
+                  maxLength={4} 
+                  value={pathAShareCode} 
+                  onChange={handlePathAShareCodeChange}
+                  placeholder="••••"
+                  className="w-full bg-vault-deep border border-white/[0.08] rounded-xl px-4 py-3 font-mono text-2xl text-vault-gold text-center tracking-[0.5em] placeholder:text-white/20 focus:outline-none focus:ring-1 focus:ring-vault-gold/40" 
+                />
+                {pathAShareCodeError && (
+                  <p className="text-xs text-red-400 mt-2 font-sans">{pathAShareCodeError}</p>
+                )}
+              </div>
+              {pathAError && (
+                <div className="flex items-start gap-2 bg-red-500/10 border border-red-500/30 rounded-xl p-3 mb-4 text-red-400">
+                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <span className="text-sm font-sans">{pathAError}</span>
+                </div>
+              )}
+              {pathAShareCode.length === 4 && !pathAVerifying && (
+                <button
+                  onClick={handlePathAVerifyPressed}
+                  className="w-full bg-gradient-to-r from-vault-gold to-vault-goldLight text-[#0a0b08] font-semibold py-3 rounded-xl hover:opacity-90 transition-all"
+                >
+                  Verify & Extract Data
+                </button>
+              )}
+              {pathAVerifying && (
+                <div className="flex items-center justify-center gap-2 bg-vault-gold/10 border border-vault-gold/20 rounded-xl p-4">
+                  <div className="w-4 h-4 rounded-full border-2 border-vault-gold border-t-transparent animate-spin" />
+                  <span className="text-sm text-vault-gold font-mono">Decrypting and parsing XML...</span>
+                </div>
+              )}
+            </div>
+          ) : pathAData ? (
+            <div>
+              <div className="space-y-4">
+                {/* Identity Section */}
+                <div className="bg-vault-teal/[0.05] border border-vault-teal/20 rounded-xl p-4">
+                  <p className="font-mono text-xs text-vault-teal mb-3">✓ IDENTITY VERIFIED (UIDAI RSA-2048)</p>
+                  {[
+                    ["Full Name", pathAData.name],
+                    ["Date of Birth", pathAData.dob || "Not extracted"],
+                    ["Gender", pathAData.gender || "Not extracted"],
+                    ["Address", pathAData.address || "Not extracted"],
+                    ["Aadhaar", pathAData.aadhaar],
+                  ].map(([k, v]) => (
+                    <div key={k} className="flex justify-between py-1 border-b border-white/[0.05] last:border-0 gap-4">
+                      <span className="font-mono text-[11px] text-muted-foreground shrink-0">{k}</span>
+                      <span className="font-mono text-[11px] text-vault-teal truncate text-right">{v}</span>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Decentralized Verification Section */}
+                <div className="bg-vault-gold/[0.05] border border-vault-gold/20 rounded-xl p-4">
+                  <p className="font-mono text-xs text-vault-gold mb-3">📋 DECENTRALIZED VERIFICATION</p>
+                  {[
+                    ["Reference ID", pathAData.referenceId],
+                    ["Document Hash", `${pathAData.documentHash}...`],
+                    ["IPFS CID", pathAData.ipfsCid],
+                    ["Public Key Hash", `${pathAData.pubKeyHash}...`],
+                    ["Status", pathAData.status],
+                  ].map(([k, v]) => (
+                    <div key={k} className="flex justify-between py-1 border-b border-white/[0.05] last:border-0">
+                      <span className="font-mono text-[11px] text-muted-foreground">{k}</span>
+                      <span className="font-mono text-[11px] text-vault-gold">{v}</span>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Technical Details Section */}
+                <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-4">
+                  <p className="font-mono text-xs text-muted-foreground mb-3">⚙️ TECHNICAL DETAILS</p>
+                  {[
+                    ["Verification Method", pathAData.verificationMethod],
+                    ["Signature Algorithm", pathAData.signature],
+                    ["Verification Time", pathAData.timestamp],
+                  ].map(([k, v]) => (
+                    <div key={k} className="flex justify-between py-1 border-b border-white/[0.05] last:border-0">
+                      <span className="font-mono text-[11px] text-muted-foreground">{k}</span>
+                      <span className="font-mono text-[11px] text-foreground/70">{v}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <button onClick={() => setScreen("path-a-guardian")} className="w-full bg-gradient-to-r from-vault-gold to-vault-goldLight text-[#0a0b08] font-semibold py-3 rounded-xl hover:opacity-90 transition-all mt-4">
+                Continue to Step 2 → Guardian Approval
+              </button>
+            </div>
+          ) : null}
         </div>
       )}
 
@@ -185,19 +503,45 @@ export default function LoginPage() {
             <div className="h-px flex-1 bg-vault-gold/20" />
           </div>
           <h2 className="font-serif text-2xl font-bold mb-4">Guardian Approval</h2>
+          
+          {/* Progress Bar */}
+          <div className="mb-6">
+            <div className="flex justify-between items-center mb-2">
+              <p className="font-mono text-xs text-muted-foreground">Approval Progress</p>
+              <p className="font-mono text-xs text-vault-gold">{guardiansApproved}/3</p>
+            </div>
+            <div className="w-full bg-vault-surface/50 border border-white/[0.05] rounded-full h-2 overflow-hidden">
+              <div 
+                className="bg-gradient-to-r from-vault-teal to-vault-gold h-full transition-all duration-500"
+                style={{ width: `${(guardiansApproved / 3) * 100}%` }}
+              />
+            </div>
+          </div>
+          
           <div className="flex flex-col gap-3 mb-6">
-            {["Priya S.", "Amit K.", "Neha R."].map((name, i) => (
-              <div key={name} className={cn("flex items-center gap-3 border rounded-xl p-3", i === 0 && guardianApproved ? "border-vault-teal/30 bg-vault-teal/[0.03]" : "border-white/[0.07]")}>
-                <Users className={cn("h-4 w-4", i === 0 && guardianApproved ? "text-vault-teal" : "text-muted-foreground")} />
+            {["Priya S.", "Amit K.", "Neha R."].map((name, i) => {
+              const isApproved = guardiansApproved > i;
+              return (
+              <div key={name} className={cn("flex items-center gap-3 border rounded-xl p-3", isApproved ? "border-vault-teal/30 bg-vault-teal/[0.03]" : "border-white/[0.07]")}>
+                <Users className={cn("h-4 w-4", isApproved ? "text-vault-teal" : "text-muted-foreground")} />
                 <span className="font-sans text-sm">{name}</span>
-                <span className={cn("ml-auto font-mono text-[10px]", i === 0 && guardianApproved ? "text-vault-teal" : "text-muted-foreground")}>
-                  {i === 0 && guardianApproved ? "✓ Approved" : "Waiting..."}
+                <span className={cn("ml-auto font-mono text-[10px]", isApproved ? "text-vault-teal" : "text-muted-foreground")}>
+                  {isApproved ? "✓ Approved" : "Waiting..."}
                 </span>
               </div>
-            ))}
+            );
+            })};
           </div>
-          {!guardianApproved ? (
-            <button onClick={() => setTimeout(() => setGuardianApproved(true), 1500)} className="w-full btn-primary py-3">
+          {guardiansApproved < 3 ? (
+            <button 
+              onClick={() => {
+                if (guardiansApproved < 3) {
+                  setTimeout(() => setGuardiansApproved(guardiansApproved + 1), 1500);
+                  setGuardianApproved(true);
+                }
+              }} 
+              className="w-full btn-primary py-3"
+            >
               Request Approval
             </button>
           ) : (
@@ -244,7 +588,6 @@ export default function LoginPage() {
         </div>
       )}
 
-      {/* Path B Sequence */}
       {screen === "path-b-step1" && (
         <div className="bg-vault-surface/80 backdrop-blur-sm border border-white/[0.07] rounded-2xl p-7">
           <button onClick={() => setScreen("recovery-choice")} className="text-sm text-muted-foreground hover:text-foreground mb-6 block">← Back</button>
@@ -253,12 +596,22 @@ export default function LoginPage() {
             <div className="h-px flex-1 bg-vault-gold/20" />
           </div>
           <h2 className="font-serif text-2xl font-bold mb-4">Initial Verification</h2>
+          <div className="bg-vault-surface2/50 border border-vault-gold/20 rounded-xl p-4 mb-6">
+            <p className="font-sans font-medium text-sm mb-3">ZIP must be less than 2 days old</p>
+            <p className="text-xs text-muted-foreground font-sans">After upload, a 12-hour cooldown period begins.</p>
+          </div>
           <label className="flex flex-col items-center justify-center border-2 border-dashed border-white/10 hover:border-vault-gold/50 rounded-2xl p-8 cursor-pointer transition-all bg-vault-deep/40 mb-4">
             <FileArchive className="h-10 w-10 text-vault-gold/50 mb-3" />
             <p className="text-sm text-foreground">Upload 1st eKYC ZIP</p>
-            <input type="file" className="hidden" onChange={() => setScreen("path-b-wait1")} />
+            <p className="text-xs text-muted-foreground">.zip files only · max 2 days old</p>
+            <input type="file" accept=".zip" className="hidden" onChange={(e) => handlePathBUpload(1, e)} />
           </label>
-          <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-tighter">Note: 12-hour cooldown begins after this step.</p>
+          {pathBStep1AgeError && (
+            <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-red-400">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span className="text-sm font-sans">{pathBStep1AgeError}</span>
+            </div>
+          )}
         </div>
       )}
 
@@ -291,8 +644,15 @@ export default function LoginPage() {
           <label className="flex flex-col items-center justify-center border-2 border-dashed border-white/10 hover:border-vault-gold/50 rounded-2xl p-8 cursor-pointer transition-all bg-vault-deep/40 mb-4">
             <FileArchive className="h-10 w-10 text-vault-gold/50 mb-3" />
             <p className="text-sm text-foreground">Upload 2nd eKYC ZIP</p>
-            <input type="file" className="hidden" onChange={() => setScreen("path-b-wait2")} />
+            <p className="text-xs text-muted-foreground">.zip files only · max 2 days old</p>
+            <input type="file" accept=".zip" className="hidden" onChange={(e) => handlePathBUpload(2, e)} />
           </label>
+          {pathBStep2AgeError && (
+            <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-red-400">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span className="text-sm font-sans">{pathBStep2AgeError}</span>
+            </div>
+          )}
         </div>
       )}
 
@@ -324,8 +684,15 @@ export default function LoginPage() {
           <label className="flex flex-col items-center justify-center border-2 border-dashed border-white/10 hover:border-vault-gold/50 rounded-2xl p-8 cursor-pointer transition-all bg-vault-deep/40 mb-4">
             <FileArchive className="h-10 w-10 text-vault-gold/50 mb-3" />
             <p className="text-sm text-foreground">Upload 3rd eKYC ZIP</p>
-            <input type="file" className="hidden" onChange={() => setScreen("unlocked")} />
+            <p className="text-xs text-muted-foreground">.zip files only · max 2 days old</p>
+            <input type="file" accept=".zip" className="hidden" onChange={(e) => handlePathBUpload(3, e)} />
           </label>
+          {pathBStep3AgeError && (
+            <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-red-400">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span className="text-sm font-sans">{pathBStep3AgeError}</span>
+            </div>
+          )}
         </div>
       )}
 

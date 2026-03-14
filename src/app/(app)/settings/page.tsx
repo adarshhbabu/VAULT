@@ -16,7 +16,7 @@ export default function SettingsPage() {
           <div className="flex flex-col gap-4">
             <div>
               <label className="font-mono text-[10px] text-muted-foreground tracking-widest uppercase block mb-1.5">Display Name</label>
-              <input defaultValue="Rahul Kumar Singh" className="w-full bg-vault-deep border border-white/[0.08] rounded-xl px-4 py-2.5 font-sans text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-vault-gold/40" />
+              <input defaultValue="Adarsh Babu" className="w-full bg-vault-deep border border-white/[0.08] rounded-xl px-4 py-2.5 font-sans text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-vault-gold/40" />
             </div>
             <div>
               <label className="font-mono text-[10px] text-muted-foreground tracking-widest uppercase block mb-1.5">Email (hashed, for recovery)</label>

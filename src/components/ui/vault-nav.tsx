@@ -66,7 +66,7 @@ export function VaultNav() {
       <div className="w-[200px] flex items-center justify-end gap-3">
         <div className="flex items-center gap-2 bg-vault-surface/80 border border-white/[0.07] rounded-lg px-3 py-1.5">
           <div className="w-2 h-2 rounded-full bg-vault-teal animate-pulse" />
-          <span className="font-mono text-xs text-foreground">Rahul</span>
+          <span className="font-mono text-xs text-foreground">Adarsh Babu</span>
           <Lock className="h-3 w-3 text-muted-foreground" />
         </div>
         <Link href="/settings" className="p-1.5 hover:bg-white/[0.04] rounded-lg transition-colors">

@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Vault | Self-Sovereign Identity",
-  description: "Prove who you are without revealing your data. Built on Polygon zkEVM.",
+  description: "Prove who you are without revealing your data. Built on Ethereum Sepolia.",
 };
 
 export default function RootLayout({

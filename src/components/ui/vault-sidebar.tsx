@@ -67,7 +67,7 @@ export function VaultSidebar({ hasGuardians = false }: { hasGuardians?: boolean 
           <Shield className="h-4 w-4 text-vault-gold" />
           <div>
             <p className="text-xs font-mono text-vault-gold">VAULT</p>
-            <p className="text-[10px] text-muted-foreground">Polygon zkEVM</p>
+            <p className="text-[10px] text-muted-foreground">Ethereum Sepolia</p>
           </div>
         </div>
       </div>

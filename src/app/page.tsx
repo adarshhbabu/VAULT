@@ -257,7 +257,7 @@ export default function LandingPage() {
                 {[
                   "Aadhaar eKYC verified on-device — no API call",
                   "Zero-Knowledge Proofs: prove without revealing",
-                  "Immutable DID on Polygon zkEVM",
+                  "Immutable DID on Ethereum Sepolia",
                 ].map(t => (
                   <div key={t} className="flex items-center gap-3">
                     <div className="w-5 h-5 rounded-full bg-vault-teal/10 border border-vault-teal/30 flex items-center justify-center shrink-0">
@@ -505,7 +505,7 @@ export default function LandingPage() {
             </Link>
           </div>
           <p className="font-mono text-[11px] text-[#94a3b8]/50 mt-8">
-            RSA-2048 · AES-256-GCM · Polygon zkEVM · Zero server data · No cookies
+            RSA-2048 · AES-256-GCM · Ethereum Sepolia · Zero server data · No cookies
           </p>
         </div>
       </section>
