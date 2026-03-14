@@ -1,0 +1,187 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Vault Design System ───────────────────────────────── */
+:root {
+  --font-sans: 'Outfit', system-ui, sans-serif;
+  --font-serif: 'Cormorant Garamond', Georgia, serif;
+  --font-mono: 'DM Mono', 'Courier New', monospace;
+  --background: #080b12;
+  --foreground: #e8edf5;
+  --surface: #111827;
+  --surface2: #1a2436;
+  --border: rgba(255,255,255,0.07);
+  --ring: #c9a84c;
+  --radius: 0.75rem;
+  /* Shadcn compat */
+  --card: 17 24 39;
+  --card-foreground: 232 237 245;
+  --popover: 13 18 32;
+  --popover-foreground: 232 237 245;
+  --primary: 201 168 76;
+  --primary-foreground: 10 11 8;
+  --secondary: 26 36 54;
+  --secondary-foreground: 232 237 245;
+  --muted: 17 24 39;
+  --muted-foreground: 148 163 184;
+  --accent: 45 212 191;
+  --accent-foreground: 10 11 8;
+  --destructive: 224 90 90;
+  --destructive-foreground: 232 237 245;
+  --input: 13 18 32;
+}
+
+/* ─── Base Reset ─────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border-color: rgba(255,255,255,0.07);
+}
+
+html {
+  color-scheme: dark;
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #080b12;
+  color: #e8edf5;
+  font-family: 'Outfit', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+}
+
+/* ─── Typography classes ─────────────────────────────────── */
+.font-serif { font-family: 'Cormorant Garamond', Georgia, serif; }
+.font-mono  { font-family: 'DM Mono', 'Courier New', monospace; }
+.font-sans  { font-family: 'Outfit', system-ui, sans-serif; }
+
+/* ─── Shadcn border/input/ring utilities ─────────────────── */
+.border-border { border-color: rgba(255,255,255,0.07); }
+
+/* ─── Animations ─────────────────────────────────────────── */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-12px); }
+}
+@keyframes pulse-ring {
+  0%   { transform: scale(0.9); opacity: 0.6; }
+  70%  { transform: scale(1.1); opacity: 0; }
+  100% { transform: scale(0.9); opacity: 0; }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.animate-fade-up   { animation: fade-up 0.8s ease-out forwards; }
+.animate-fade-in   { animation: fade-in 0.6s ease-out forwards; }
+.animate-float     { animation: float 6s ease-in-out infinite; }
+.animate-pulse-ring { animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite; }
+.animate-shimmer   {
+  background: linear-gradient(90deg, transparent, rgba(201,168,76,0.15), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* ─── Delay utilities ────────────────────────────────────── */
+.delay-100 { animation-delay: 0.1s; }
+.delay-200 { animation-delay: 0.2s; }
+.delay-300 { animation-delay: 0.3s; }
+.delay-400 { animation-delay: 0.4s; }
+.delay-500 { animation-delay: 0.5s; }
+.opacity-0-start { opacity: 0; }
+
+/* ─── Glass card ─────────────────────────────────────────── */
+.glass-card {
+  background: rgba(17, 24, 39, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 1rem;
+  transition: border-color 0.3s, box-shadow 0.3s, transform 0.2s;
+}
+.glass-card:hover {
+  border-color: rgba(201,168,76,0.25);
+  box-shadow: 0 0 0 1px rgba(201,168,76,0.1), 0 24px 48px rgba(0,0,0,0.4);
+  transform: translateY(-2px);
+}
+
+/* ─── Gold gradient text ─────────────────────────────────── */
+.gold-text {
+  background: linear-gradient(135deg, #c9a84c, #e8c97a, #c9a84c);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Primary button ─────────────────────────────────────── */
+.btn-primary {
+  background: linear-gradient(135deg, #c9a84c, #e8c97a);
+  color: #0a0b08;
+  font-weight: 600;
+  border-radius: 0.75rem;
+  transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+  box-shadow: 0 4px 24px rgba(201,168,76,0.2);
+}
+.btn-primary:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 32px rgba(201,168,76,0.3);
+}
+.btn-primary:active { transform: scale(0.98); }
+
+/* ─── Secondary button ───────────────────────────────────── */
+.btn-secondary {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #94a3b8;
+  border-radius: 0.75rem;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+.btn-secondary:hover {
+  border-color: rgba(201,168,76,0.4);
+  color: #e8edf5;
+  background: rgba(201,168,76,0.04);
+}
+
+/* ─── Input fields ───────────────────────────────────────── */
+.vault-input {
+  background: #0d1220;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 0.75rem;
+  color: #e8edf5;
+  font-family: 'DM Mono', monospace;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+.vault-input::placeholder { color: rgba(255,255,255,0.2); }
+.vault-input:focus {
+  border-color: rgba(201,168,76,0.4);
+  box-shadow: 0 0 0 3px rgba(201,168,76,0.08);
+}
+
+/* ─── Scrollbar ──────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #080b12; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(201,168,76,0.3); }
+
+/* ─── Hero glow blob ─────────────────────────────────────── */
+.hero-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  pointer-events: none;
+}
