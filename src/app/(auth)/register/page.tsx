@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Shield, Eye, EyeOff, Check, X, ChevronRight, Upload, FileArchive, Users, ExternalLink, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LivenessTest } from "@/components/ui/liveness-test";
+import { livenessSessionValid } from "@/lib/liveness-session";
 
 declare global {
   interface Window {
@@ -116,10 +118,13 @@ function StepIndicator({ current }: { current: Step }) {
 export default function RegisterPage() {
   const [step, setStep] = useState<Step>(1);
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [agreed, setAgreed] = useState(false);
+  const [livenessDone, setLivenessDone] = useState(false);
+  const [showLiveness, setShowLiveness] = useState(false);
   
   // Step 2: XML File submission
   const [xmlFile, setXmlFile] = useState<File | null>(null);
@@ -147,9 +152,23 @@ export default function RegisterPage() {
     };
   }, []);
 
+  // Check liveness session validity when arriving at Step 2
+  useEffect(() => {
+    if (step === 2) {
+      if (livenessSessionValid()) {
+        setLivenessDone(true);
+      } else {
+        setLivenessDone(false);
+      }
+    }
+  }, [step]);
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const emailValid = emailRegex.test(email);
+  const nameValid = name.length >= 2 && !/^\d/.test(name);
   const passOk = strengthChecks.every(c => c.test(password));
   const passMatch = password === confirm && confirm.length > 0;
-  const step1Ok = name.length >= 2 && passOk && passMatch && agreed;
+  const step1Ok = nameValid && emailValid && passOk && passMatch && agreed;
 
   // Handle XML file upload - check age first
   const handleXmlUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -320,10 +339,26 @@ export default function RegisterPage() {
               <div className="flex flex-col gap-5">
                 <div>
                   <label className="font-mono text-[11px] text-muted-foreground tracking-widest uppercase block mb-2">Display Name</label>
-                  <input value={name} onChange={e => setName(e.target.value)} placeholder="How you'll appear in Vault"
+                  <input value={name} onChange={e => setName(e.target.value)} placeholder="How you&apos;ll appear in Vault"
                     className="w-full bg-vault-deep border border-white/[0.08] rounded-xl px-4 py-3 font-sans text-[15px] text-foreground placeholder:text-white/20 focus:outline-none focus:ring-1 focus:ring-vault-gold/40 focus:border-vault-gold/40" />
-                  {name.length >= 2 && (
+                  {name.length >= 2 && nameValid && (
                     <p className="font-mono text-xs text-vault-gold mt-1.5">vault://{name.toLowerCase().replace(/\s+/g, "-")}</p>
+                  )}
+                  {name.length > 0 && !nameValid && /^\d/.test(name) && (
+                    <p className="font-mono text-xs text-vault-red mt-1.5">Name cannot start with a digit</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="font-mono text-[11px] text-muted-foreground tracking-widest uppercase block mb-2">Email</label>
+                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your.email@domain.com"
+                    className={cn("w-full bg-vault-deep border rounded-xl px-4 py-3 font-sans text-[15px] text-foreground placeholder:text-white/20 focus:outline-none focus:ring-1",
+                      email.length > 0 ? emailValid ? "border-vault-teal/40 focus:ring-vault-teal/40" : "border-vault-red/40 focus:ring-vault-red/40" : "border-white/[0.08] focus:ring-vault-gold/40")} />
+                  {email.length > 0 && !emailValid && (
+                    <p className="text-xs text-vault-red mt-1.5 font-sans">Please enter a valid email address</p>
+                  )}
+                  {email.length > 0 && emailValid && (
+                    <p className="text-xs text-vault-teal mt-1.5 font-sans">✓ Valid email</p>
                   )}
                 </div>
 
@@ -383,26 +418,60 @@ export default function RegisterPage() {
             </div>
           )}
 
-          {/* Step 2: Aadhaar */}
+          {/* Step 2: Liveness / Video Confirmation */}
           {step === 2 && (
             <div className="bg-vault-surface/80 backdrop-blur-sm border border-white/[0.07] rounded-2xl p-7">
               <h3 className="font-serif text-3xl font-bold mb-1">Verify your identity</h3>
+              <p className="text-muted-foreground text-sm font-sans mb-6">Position your face in the frame. We use local AI to verify you are a real person.</p>
+              
+              {!livenessDone ? (
+                <LivenessTest 
+                  onSuccess={() => {
+                    setLivenessDone(true);
+                  }}
+                />
+              ) : (
+                <div className="w-full aspect-video rounded-2xl border-2 border-vault-teal/50 bg-vault-teal/[0.04] flex flex-col items-center justify-center gap-4">
+                  <div className="w-16 h-16 rounded-full bg-vault-teal/20 border border-vault-teal/40 flex items-center justify-center">
+                    <Check className="h-8 w-8 text-vault-teal" />
+                  </div>
+                  <div className="text-center">
+                    <p className="font-sans font-bold text-lg text-vault-teal">Liveness Verified ✓</p>
+                    <p className="text-xs text-muted-foreground mt-1">Identity confirmed</p>
+                  </div>
+                </div>
+              )}
+              
+              {livenessDone && (
+                <button onClick={() => setStep(3)} className="w-full bg-gradient-to-r from-vault-gold to-vault-goldLight text-[#0a0b08] font-semibold py-3 rounded-xl hover:opacity-90 transition-all mt-6">
+                  Continue to eKYC Upload <ChevronRight className="inline h-4 w-4" />
+                </button>
+              )}
+              <p className="text-[10px] text-muted-foreground font-mono mt-4 text-center">Video data is processed locally and never leaves this device.</p>
+            </div>
+          )}
+
+          {/* Step 3: eKYC / Aadhaar Verification */}
+          {step === 3 && (
+            <div className="bg-vault-surface/80 backdrop-blur-sm border border-white/[0.07] rounded-2xl p-7">
+              <h3 className="font-serif text-3xl font-bold mb-1">Upload your eKYC</h3>
               <p className="text-muted-foreground text-sm font-sans mb-6">All verification happens on your device. Nothing is sent to Vault&apos;s servers.</p>
 
-              <div className="bg-vault-surface2/50 border border-vault-gold/20 rounded-xl p-4 mb-6">
-                <p className="font-sans font-medium text-sm mb-3">Get your eKYC file first</p>
-                <a href="https://myaadhaar.uidai.gov.in/offline-kyc" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-vault-gold text-sm font-mono hover:underline mb-3">
-                  <ExternalLink className="h-3.5 w-3.5" /> myaadhaar.uidai.gov.in
-                </a>
-                <ol className="text-xs text-muted-foreground font-sans space-y-1 list-decimal list-inside">
-                  <li>Go to myaadhaar.uidai.gov.in and log in</li>
-                  <li>Click &ldquo;Offline e-KYC&rdquo; → &ldquo;Download&rdquo;</li>
-                  <li>Set a 4-digit share code (remember it!)</li>
-                  <li>Save the downloaded ZIP file (must be less than 2 days old)</li>
-                </ol>
-              </div>
+              <>
+                <div className="bg-vault-surface2/50 border border-vault-gold/20 rounded-xl p-4 mb-6">
+                  <p className="font-sans font-medium text-sm mb-3">Get your eKYC file first</p>
+                  <a href="https://myaadhaar.uidai.gov.in/offline-kyc" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-vault-gold text-sm font-mono hover:underline mb-3">
+                    <ExternalLink className="h-3.5 w-3.5" /> myaadhaar.uidai.gov.in
+                  </a>
+                  <ol className="text-xs text-muted-foreground font-sans space-y-1 list-decimal list-inside">
+                    <li>Go to myaadhaar.uidai.gov.in and log in</li>
+                    <li>Click &ldquo;Offline e-KYC&rdquo; → &ldquo;Download&rdquo;</li>
+                    <li>Set a 4-digit share code (remember it!)</li>
+                    <li>Save the downloaded ZIP file (must be less than 2 days old)</li>
+                  </ol>
+                </div>
 
-              {!xmlFile ? (
+                {!xmlFile ? (
                 <>
                   <label className="flex flex-col items-center justify-center border-2 border-dashed border-vault-purple/30 hover:border-vault-gold/50 hover:bg-vault-gold/[0.03] rounded-2xl p-10 cursor-pointer transition-all duration-200">
                     <FileArchive className="h-10 w-10 text-vault-purple mb-3" />
@@ -512,50 +581,13 @@ export default function RegisterPage() {
                     </div>
                   </div>
                   
-                  <button onClick={() => setStep(3)} className="w-full bg-gradient-to-r from-vault-gold to-vault-goldLight text-[#0a0b08] font-semibold py-3 rounded-xl hover:opacity-90 transition-all mt-4">
-                    Continue to Liveness Check <ChevronRight className="inline h-4 w-4" />
+                  <button onClick={() => setStep(4)} className="w-full bg-gradient-to-r from-vault-gold to-vault-goldLight text-[#0a0b08] font-semibold py-3 rounded-xl hover:opacity-90 transition-all mt-4">
+                    Continue to Anchors <ChevronRight className="inline h-4 w-4" />
                   </button>
                 </div>
               ) : null}
-            </div>
-          )}
 
-          {/* Step 3: Liveness / Video Confirmation */}
-          {step === 3 && (
-            <div className="bg-vault-surface/80 backdrop-blur-sm border border-white/[0.07] rounded-2xl p-7">
-              <h3 className="font-serif text-3xl font-bold mb-1">Video Confirmation</h3>
-              <p className="text-muted-foreground text-sm font-sans mb-6">Position your face in the frame. We use local AI to verify you are a real person.</p>
-              
-              <div className="relative aspect-video bg-black rounded-2xl overflow-hidden mb-6 border border-white/10 group">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-48 h-48 rounded-full border-2 border-dashed border-vault-gold/40 animate-spin" />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-44 h-44 rounded-full border-2 border-vault-gold/60" />
-                  </div>
-                </div>
-                {/* Simulated scan line */}
-                <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-vault-teal/50 to-transparent shadow-[0_0_15px_rgba(45,212,191,0.5)] animate-scan" />
-                <div className="absolute bottom-4 left-4 flex items-center gap-2 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10">
-                  <div className="w-2 h-2 rounded-full bg-vault-red animate-pulse" />
-                  <span className="font-mono text-[10px] text-white">REC · LIVENESS_DETECT_V2</span>
-                </div>
-              </div>
-              <style>{`
-                @keyframes scan {
-                  0% { top: 0%; }
-                  50% { top: 100%; }
-                  100% { top: 0%; }
-                }
-                .animate-scan {
-                  position: absolute;
-                  animation: scan 3s ease-in-out infinite;
-                }
-              `}</style>
-
-              <button onClick={() => setStep(4)} className="w-full bg-gradient-to-r from-vault-gold to-vault-goldLight text-[#0a0b08] font-semibold py-3 rounded-xl hover:opacity-90 transition-all">
-                Confirm Identity <Check className="inline h-4 w-4" />
-              </button>
-              <p className="text-[10px] text-muted-foreground font-mono mt-4 text-center">Video data is processed locally and never leaves this device.</p>
+              </>
             </div>
           )}
 

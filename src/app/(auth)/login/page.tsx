@@ -273,7 +273,7 @@ export default function LoginPage() {
           <div className="flex items-center gap-3 bg-vault-teal/[0.06] border border-vault-teal/20 rounded-xl px-3 py-2.5 mb-6">
             <div className="w-2 h-2 rounded-full bg-vault-teal animate-pulse" />
             <div className="flex-1">
-              <span className="text-sm font-sans text-foreground">Adarsh's A35</span>
+              <span className="text-sm font-sans text-foreground">Adarsh&apos;s A35</span>
               <span className="font-mono text-xs text-muted-foreground ml-2">did:vault:0x8f...ef2</span>
             </div>
             <Lock className="h-3.5 w-3.5 text-muted-foreground" />

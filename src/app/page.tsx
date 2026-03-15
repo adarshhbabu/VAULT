@@ -447,7 +447,7 @@ export default function LandingPage() {
               <div className="w-2 h-2 rounded-full bg-vault-teal animate-pulse" />
               <span className="font-mono text-xs text-vault-teal font-semibold">✓ VERIFIED — SBI</span>
             </div>
-            <p className="font-sans text-sm text-white mb-3">"Your OTP for account login is 847291."</p>
+            <p className="font-sans text-sm text-white mb-3">&quot;Your OTP for account login is 847291.&quot;</p>
             <div className="flex flex-col gap-1">
               {["Signed token ✓","DID verified ✓","Registry match ✓"].map(c => (
                 <div key={c} className="flex items-center gap-2">
@@ -467,7 +467,7 @@ export default function LandingPage() {
               <XCircle className="h-3.5 w-3.5 text-vault-red" />
               <span className="font-mono text-xs text-vault-red font-semibold">✗ UNVERIFIED — FAKE SBI</span>
             </div>
-            <p className="font-sans text-sm text-white mb-3">"URGENT: Your account is suspended. Click: bit.ly/..."</p>
+            <p className="font-sans text-sm text-white mb-3">&quot;URGENT: Your account is suspended. Click: bit.ly/...&quot;</p>
             <div className="flex flex-col gap-1">
               {["No signed token ✗","DID not found ✗","Registry miss ✗"].map(c => (
                 <div key={c} className="flex items-center gap-2">
@@ -498,7 +498,7 @@ export default function LandingPage() {
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/register" className="btn-primary px-10 py-4 flex items-center gap-2 text-base">
-              Create your Vault — it's free <ChevronRight className="h-4 w-4" />
+              Create your Vault — it&apos;s free <ChevronRight className="h-4 w-4" />
             </Link>
             <Link href="/login" className="btn-secondary px-8 py-4 text-base">
               Sign in
